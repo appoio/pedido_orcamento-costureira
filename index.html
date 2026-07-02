@@ -1,0 +1,1345 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pedido de Orçamento — Ateliê Marina</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Domine:wght@500;700&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+      /* ============================================================
+   CONFIGURAÇÃO — edite aqui para personalizar para cada cliente
+   ============================================================ */
+      :root {
+        --paper: #ede7d8;
+        --paper-deep: #e6ddc5;
+        --ink: #232221;
+        --ink-soft: #5c5346;
+        --thread: #422421;
+        --thread-deep: #351a18;
+        --chalk: #35625a;
+        --mustard: #c89a3e;
+        --line: #242320;
+        --white: #fbf9f3;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background:
+          repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 27px,
+            rgba(42, 37, 32, 0.028) 28px
+          ),
+          var(--paper);
+        color: var(--ink);
+        font-family: "Work Sans", sans-serif;
+        line-height: 1.5;
+        padding: 28px 16px 64px;
+      }
+      .wrap {
+        max-width: 640px;
+        margin: 0 auto;
+      }
+
+      /* ---- Header ---- */
+      .brandbar {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 6px;
+      }
+      .badge {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        /* background: var(--thread); */
+        color: var(--white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Domine", serif;
+        font-weight: 700;
+        font-size: 22px;
+        flex-shrink: 0;
+        box-shadow:
+          0 0 0 3px var(--paper),
+          0 0 0 4px var(--line);
+      }
+      /* Estilo para a imagem dentro do badge */
+      #badgeImage {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover; /* ajusta a imagem para preencher sem distorcer */
+        display: block;
+      }
+      .brandtext h1 {
+        font-family: "Domine", serif;
+        font-weight: 700;
+        font-size: 22px;
+        margin: 0 0 2px;
+        letter-spacing: 0.2px;
+      }
+      .brandtext p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ink-soft);
+        font-style: italic;
+      }
+
+      .ticket-no {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--ink-soft);
+        letter-spacing: 0.5px;
+        margin: 14px 0 18px;
+        text-transform: uppercase;
+      }
+
+      /* ---- Measuring tape progress ---- */
+      .tape {
+        position: relative;
+        height: 34px;
+        margin-bottom: 22px;
+        background: var(--white);
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .tape-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--chalk), #4d857a);
+        transition: width 0.4s ease;
+      }
+      .tape-ticks {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: flex-end;
+        pointer-events: none;
+      }
+      .tape-tick {
+        flex: 1;
+        border-left: 1px solid rgba(42, 37, 32, 0.18);
+        height: 40%;
+        position: relative;
+      }
+      .tape-tick.major {
+        height: 70%;
+        border-left: 1px solid rgba(42, 37, 32, 0.32);
+      }
+      .tape-label {
+        position: absolute;
+        top: 50%;
+        left: 10px;
+        transform: translateY(-50%);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--ink);
+        mix-blend-mode: difference;
+        filter: invert(1);
+        letter-spacing: 0.5px;
+      }
+
+      /* ---- Card / ticket ---- */
+      .card {
+        background: var(--white);
+        border: 2px dashed var(--line);
+        border-radius: 6px;
+        padding: 26px 22px;
+        position: relative;
+      }
+      .card::before,
+      .card::after {
+        content: "✂";
+        position: absolute;
+        font-size: 14px;
+        color: var(--line);
+        top: -11px;
+        background: var(--paper);
+        padding: 0 4px;
+      }
+      .card::before {
+        left: 14px;
+      }
+      .card::after {
+        right: 14px;
+      }
+
+      .section {
+        margin-bottom: 26px;
+      }
+      .section:last-child {
+        margin-bottom: 0;
+      }
+      .section-head {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 8px;
+      }
+      .section-num {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--thread);
+        font-weight: 600;
+      }
+      .section-title {
+        font-family: "Domine", serif;
+        font-weight: 700;
+        font-size: 16px;
+      }
+
+      label {
+        display: block;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      label .req {
+        color: var(--thread);
+        margin-left: 2px;
+      }
+      label .opt {
+        color: var(--ink-soft);
+        font-weight: 400;
+        text-transform: none;
+        letter-spacing: 0;
+        font-style: italic;
+      }
+
+      .field {
+        margin-bottom: 16px;
+      }
+      .row2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .row4 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      input[type="text"],
+      input[type="tel"],
+      input[type="date"],
+      textarea,
+      select {
+        width: 100%;
+        padding: 11px 12px;
+        font-size: 15px;
+        font-family: "Work Sans", sans-serif;
+        border: 1.5px solid var(--line);
+        border-radius: 4px;
+        background: var(--paper);
+        color: var(--ink);
+      }
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--chalk);
+        background: var(--white);
+      }
+      textarea {
+        resize: vertical;
+        min-height: 70px;
+      }
+
+      .chip-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .chip {
+        border: 1.5px solid var(--line);
+        background: var(--paper);
+        color: var(--ink);
+        padding: 9px 14px;
+        border-radius: 20px;
+        font-size: 13.5px;
+        cursor: pointer;
+        font-weight: 500;
+        user-select: none;
+        transition: 0.15s;
+      }
+      .chip input {
+        display: none;
+      }
+      .chip.active {
+        background: var(--thread);
+        border-color: var(--thread);
+        color: var(--white);
+      }
+
+      .field-hint {
+        font-size: 11.5px;
+        color: var(--ink-soft);
+        margin: 10px 0;
+        font-style: italic;
+      }
+      .measure-group-title {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--chalk);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin: 14px 0 8px;
+      }
+      .measure-group-title:first-child {
+        margin-top: 0;
+      }
+
+      .measure-toggle {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 14px;
+        font-size: 13.5px;
+        color: var(--ink-soft);
+        cursor: pointer;
+      }
+      .measure-toggle input {
+        width: 17px;
+        height: 17px;
+        accent-color: var(--chalk);
+      }
+
+      .unit {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--ink-soft);
+        margin-top: 3px;
+      }
+
+      .photo-box {
+        border: 1.5px dashed var(--line);
+        border-radius: 6px;
+        padding: 16px;
+        text-align: center;
+        background: var(--paper);
+        cursor: pointer;
+      }
+      .photo-box:hover {
+        border-color: var(--chalk);
+      }
+      .photo-box input {
+        display: none;
+      }
+      .photo-hint {
+        font-size: 12px;
+        color: var(--ink-soft);
+        margin-top: 6px;
+      }
+      .thumbs {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+      .thumb {
+        position: relative;
+        width: 64px;
+        height: 64px;
+        border-radius: 4px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+      }
+      .thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .thumb button {
+        position: absolute;
+        top: 0;
+        right: 0;
+        background: var(--thread);
+        color: #fff;
+        border: none;
+        width: 18px;
+        height: 18px;
+        font-size: 11px;
+        cursor: pointer;
+        line-height: 1;
+      }
+
+      .submit-row {
+        margin-top: 28px;
+      }
+      .btn {
+        width: 100%;
+        padding: 15px;
+        font-size: 15px;
+        font-weight: 600;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: "Work Sans", sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .btn-primary {
+        background: var(--thread);
+        color: var(--white);
+      }
+      .btn-primary:hover {
+        background: var(--thread-deep);
+      }
+      .btn-primary:disabled {
+        background: #b8ab8f;
+        cursor: not-allowed;
+      }
+      .helper {
+        font-size: 12px;
+        color: var(--ink-soft);
+        text-align: center;
+        margin-top: 10px;
+      }
+
+      .error {
+        color: var(--thread-deep);
+        font-size: 12px;
+        margin-top: 5px;
+        display: none;
+      }
+      .field.invalid input,
+      .field.invalid select {
+        border-color: var(--thread);
+      }
+      .field.invalid .error {
+        display: block;
+      }
+
+      /* ---- Confirmation state ---- */
+      .confirm {
+        display: none;
+        text-align: center;
+        padding: 10px 4px 6px;
+      }
+      .confirm .stamp {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: var(--chalk);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        font-size: 28px;
+      }
+      .confirm h2 {
+        font-family: "Domine", serif;
+        margin: 0 0 8px;
+      }
+      .confirm p {
+        color: var(--ink-soft);
+        font-size: 14px;
+        margin: 0 0 22px;
+      }
+      .confirm .btn {
+        margin-bottom: 10px;
+      }
+      .btn-wa {
+        background: #3e6b63;
+        color: #fff;
+      }
+      .btn-wa:hover {
+        background: #2f544d;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--ink-soft);
+        border: 1.5px solid var(--line);
+      }
+
+      footer {
+        text-align: center;
+        font-size: 11.5px;
+        color: var(--ink-soft);
+        margin-top: 26px;
+      }
+
+      @media (max-width: 420px) {
+        .row2,
+        .row4 {
+          grid-template-columns: 1fr;
+        }
+        .card {
+          padding: 20px 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="brandbar">
+        <!-- versão antiga: -->
+        <!-- <div class="badge" id="badge">M</div> -->
+
+        <!-- nova versão: -->
+        <div class="badge" id="badge">
+          <img src="logo.jpg" alt="Logo do Ateliê" id="badgeImage" />
+        </div>
+        <div class="brandtext">
+          <h1 id="bizName">Ateliê Marina Costura</h1>
+          <p id="bizTag">peça sob medida, do seu jeito</p>
+        </div>
+      </div>
+      <div class="ticket-no" id="ticketNo">Pedido Nº ——</div>
+
+      <div class="tape">
+        <div class="tape-fill" id="tapeFill"></div>
+        <div class="tape-ticks" id="tapeTicks"></div>
+        <div class="tape-label" id="tapeLabel">0% preenchido</div>
+      </div>
+
+      <form class="card" id="form" novalidate>
+        <div class="section">
+          <div class="section-head">
+            <span class="section-num">01</span
+            ><span class="section-title">Seus dados</span>
+          </div>
+          <div class="field" id="f-nome">
+            <label>Nome completo<span class="req">*</span></label>
+            <input
+              type="text"
+              id="nome"
+              placeholder="Digite o seu nome"
+              maxlength="60"
+              autocomplete="name"
+            />
+            <div class="error">Preencha seu nome.</div>
+          </div>
+          <div class="field" id="f-contato">
+            <label>WhatsApp para contato<span class="req">*</span></label>
+            <input
+              type="tel"
+              id="contato"
+              placeholder="(21) 90000-0000"
+              inputmode="numeric"
+              maxlength="15"
+              autocomplete="tel"
+            />
+            <div class="error">Informe um número de WhatsApp.</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <span class="section-num">02</span
+            ><span class="section-title">O que você precisa</span>
+          </div>
+          <div class="field" id="f-servico">
+            <label>Tipo de serviço<span class="req">*</span></label>
+            <div class="chip-group" id="servicoChips">
+              <label class="chip"
+                ><input
+                  type="checkbox"
+                  name="servico"
+                  value="Ajuste"
+                />Ajuste</label
+              >
+              <label class="chip"
+                ><input
+                  type="checkbox"
+                  name="servico"
+                  value="Criação do zero"
+                />Criação do zero</label
+              >
+              <label class="chip"
+                ><input
+                  type="checkbox"
+                  name="servico"
+                  value="Conserto"
+                />Conserto</label
+              >
+              <label class="chip"
+                ><input
+                  type="checkbox"
+                  name="servico"
+                  value="Bordado"
+                />Bordado</label
+              >
+            </div>
+            <div class="field-hint">Pode marcar mais de um</div>
+            <div class="error">Escolha ao menos um tipo de serviço.</div>
+          </div>
+          <div class="field" id="f-peca">
+            <label>Tipo de peça<span class="req">*</span></label>
+            <div class="chip-group" id="pecaChips">
+              <label class="chip"
+                ><input
+                  type="checkbox"
+                  name="peca"
+                  value="Vestido"
+                />Vestido</label
+              >
+              <label class="chip"
+                ><input type="checkbox" name="peca" value="Calça" />Calça</label
+              >
+              <label class="chip"
+                ><input
+                  type="checkbox"
+                  name="peca"
+                  value="Blusa/Camisa"
+                />Blusa/Camisa</label
+              >
+              <label class="chip"
+                ><input type="checkbox" name="peca" value="Saia" />Saia</label
+              >
+              <label class="chip"
+                ><input
+                  type="checkbox"
+                  name="peca"
+                  value="Roupa infantil"
+                />Roupa infantil</label
+              >
+              <label class="chip"
+                ><input type="checkbox" name="peca" value="Outro" />Outro</label
+              >
+            </div>
+            <div class="field-hint">Pode marcar mais de uma peça</div>
+            <div class="error">Selecione ao menos uma peça.</div>
+          </div>
+          <div class="field" id="f-pecaOutro" style="display: none">
+            <label>Qual peça? <span class="opt">descreva</span></label>
+            <input
+              type="text"
+              id="pecaOutro"
+              placeholder="Descreva a peça"
+              maxlength="80"
+            />
+          </div>
+          <div class="field">
+            <label>Tipo de tecido <span class="opt">se souber</span></label>
+            <input
+              type="text"
+              id="tecido"
+              list="tecidos"
+              placeholder="Ex: algodão, linho, tricoline..."
+            />
+            <datalist id="tecidos">
+              <option>Algodão</option>
+              <option>Linho</option>
+              <option>Seda</option>
+              <option>Tricoline</option>
+              <option>Malha</option>
+              <option>Viscose</option>
+              <option>Brim</option>
+              <option>Tule</option>
+              <option>Renda</option>
+            </datalist>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <span class="section-num">03</span
+            ><span class="section-title">Medidas</span>
+          </div>
+          <label class="measure-toggle">
+            <input type="checkbox" id="skipMedidas" />
+            Prefiro que as medidas sejam tiradas na hora da prova
+          </label>
+          <div id="medidasBlock">
+            <p class="measure-group-title">Tronco</p>
+            <div class="row4">
+              <div class="field">
+                <label>Altura</label>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  id="altura"
+                  placeholder="0"
+                />
+                <div class="unit">cm</div>
+              </div>
+              <div class="field">
+                <label>Ombros</label>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  id="ombros"
+                  placeholder="0"
+                />
+                <div class="unit">cm</div>
+              </div>
+              <div class="field">
+                <label>Busto</label>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  id="busto"
+                  placeholder="0"
+                />
+                <div class="unit">cm</div>
+              </div>
+              <div class="field">
+                <label>Cintura</label>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  id="cintura"
+                  placeholder="0"
+                />
+                <div class="unit">cm</div>
+              </div>
+              <div class="field">
+                <label>Quadril</label>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  id="quadril"
+                  placeholder="0"
+                />
+                <div class="unit">cm</div>
+              </div>
+              <div class="field">
+                <label>Comprimento da peça</label>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  id="comprimento"
+                  placeholder="0"
+                />
+                <div class="unit">cm</div>
+              </div>
+            </div>
+
+            <p class="measure-group-title">Braços</p>
+            <div class="row4">
+              <div class="field">
+                <label>Braço</label>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  id="braco"
+                  placeholder="0"
+                />
+                <div class="unit">cm</div>
+              </div>
+              <div class="field">
+                <label>Antebraço</label>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  id="antebraco"
+                  placeholder="0"
+                />
+                <div class="unit">cm</div>
+              </div>
+              <div class="field">
+                <label>Pulso</label>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  id="pulso"
+                  placeholder="0"
+                />
+                <div class="unit">cm</div>
+              </div>
+            </div>
+
+            <p class="measure-group-title">Pernas</p>
+            <div class="row4">
+              <div class="field">
+                <label>Perna (comprimento)</label>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  id="pernaComprimento"
+                  placeholder="0"
+                />
+                <div class="unit">cm</div>
+              </div>
+              <div class="field">
+                <label>Coxa</label>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  id="coxa"
+                  placeholder="0"
+                />
+                <div class="unit">cm</div>
+              </div>
+              <div class="field">
+                <label>Panturrilha</label>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  id="panturrilha"
+                  placeholder="0"
+                />
+                <div class="unit">cm</div>
+              </div>
+            </div>
+            <p class="field-hint">
+              Se as peças marcadas acima precisam de medidas diferentes entre
+              si, detalhe em "Observações".
+            </p>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <span class="section-num">04</span
+            ><span class="section-title">Prazo e observações</span>
+          </div>
+          <div class="field" id="f-prazo">
+            <label>Prazo desejado<span class="req">*</span></label>
+            <input type="date" id="prazo" />
+            <div class="field-hint" id="prazoHint"></div>
+            <div class="error">
+              Escolha uma data dentro do prazo mínimo aceito.
+            </div>
+          </div>
+          <div class="field">
+            <label
+              >Observações / referência de estilo
+              <span class="opt">opcional</span></label
+            >
+            <textarea
+              id="obs"
+              placeholder="Cor, ocasião, referência de modelo, tecido delicado, etc."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <span class="section-num">05</span
+            ><span class="section-title">Fotos de referência</span>
+          </div>
+          <label class="photo-box" id="photoBox">
+            <input type="file" id="fotoInput" accept="image/*" multiple />
+            📎 Toque para adicionar fotos
+            <div class="photo-hint">
+              Até <span id="maxFotosLabel"></span> fotos — modelo desejado,
+              tecido ou peça a ajustar
+            </div>
+          </label>
+          <div class="thumbs" id="thumbs"></div>
+        </div>
+
+        <div class="submit-row">
+          <button type="submit" class="btn btn-primary" id="submitBtn">
+            ✂ Gerar meu pedido
+          </button>
+          <p class="helper">
+            Vamos gerar um PDF do seu pedido e abrir o WhatsApp da costureira
+          </p>
+        </div>
+      </form>
+
+      <div class="card confirm" id="confirmCard">
+        <div class="stamp">✓</div>
+        <h2>Pedido gerado!</h2>
+        <p>
+          Seu PDF foi baixado. Agora envie pelo WhatsApp para a costureira — já
+          deixamos a mensagem pronta.
+        </p>
+        <button class="btn btn-wa" id="waBtn">
+          💬 Abrir WhatsApp e enviar
+        </button>
+        <button class="btn btn-ghost" id="newBtn">Fazer novo pedido</button>
+      </div>
+
+      <footer>
+        Ficha de orçamento •
+        <span id="bizNameFooter">Ateliê Marina Costura</span>
+      </footer>
+    </div>
+
+    <script>
+      /* ============================================================
+   CONFIGURAÇÃO DO NEGÓCIO — edite estes valores para cada cliente
+   ============================================================ */
+      const CONFIG = {
+        businessName: "Ateliê Marina Costura",
+        tagline: "peça sob medida, do seu jeito",
+        badgeLetter: "",
+        whatsappNumber: "5521975811821", // formato: 55 + DDD + número, só dígitos
+        brandColor: "#A83A32", // usado no PDF
+        prazoMinimoDias: 7, // prazo mínimo (em dias) que o cliente pode escolher, contando a partir de hoje
+        maxFotos: 6, // quantidade máxima de fotos que o cliente pode anexar
+      };
+
+      document.getElementById("bizName").textContent = CONFIG.businessName;
+      document.getElementById("bizTag").textContent = CONFIG.tagline;
+      // document.getElementById("badge").textContent = CONFIG.badgeLetter;
+      // Se você quiser manter a opção de letra OU imagem, use:
+if (CONFIG.badgeLetter) {
+  document.getElementById("badge").textContent = CONFIG.badgeLetter;
+}
+// Se não, a imagem do HTML será exibida
+      document.getElementById("bizNameFooter").textContent =
+        CONFIG.businessName;
+      document.getElementById("maxFotosLabel").textContent = CONFIG.maxFotos;
+
+      // Ticket number based on date + random
+      const ticketId = (() => {
+        const d = new Date();
+        const y = d.getFullYear().toString().slice(-2);
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        const rand = Math.floor(Math.random() * 90 + 10);
+        return `${y}${m}${day}-${rand}`;
+      })();
+      document.getElementById("ticketNo").textContent = `Pedido Nº ${ticketId}`;
+
+      // Tape ticks (decorative ruler)
+      const ticksEl = document.getElementById("tapeTicks");
+      for (let i = 0; i < 40; i++) {
+        const t = document.createElement("div");
+        t.className = "tape-tick" + (i % 5 === 0 ? " major" : "");
+        ticksEl.appendChild(t);
+      }
+
+      // Sanitização do nome — só letras, espaços, apóstrofo e hífen
+      const nomeInput = document.getElementById("nome");
+      nomeInput.addEventListener("input", function () {
+        this.value = this.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ' -]/g, "");
+      });
+
+      // Máscara de telefone — só números, formato (XX) XXXXX-XXXX
+      const contatoInput = document.getElementById("contato");
+      contatoInput.addEventListener("input", function () {
+        let v = this.value.replace(/\D/g, "").slice(0, 11);
+        if (v.length > 10)
+          v = v.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+        else if (v.length > 6)
+          v = v.replace(/^(\d{2})(\d{4})(\d*)$/, "($1) $2-$3");
+        else if (v.length > 2) v = v.replace(/^(\d{2})(\d*)$/, "($1) $2");
+        this.value = v;
+      });
+
+      // Sanitização das medidas — só números, vírgula e ponto
+      [
+        "altura",
+        "ombros",
+        "busto",
+        "cintura",
+        "quadril",
+        "comprimento",
+        "braco",
+        "antebraco",
+        "pulso",
+        "pernaComprimento",
+        "coxa",
+        "panturrilha",
+      ].forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener("input", function () {
+          this.value = this.value.replace(/[^0-9.,]/g, "");
+        });
+      });
+
+      // Prazo mínimo — configurável em CONFIG.prazoMinimoDias
+      (function () {
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        const minDate = new Date(hoje);
+        minDate.setDate(minDate.getDate() + (CONFIG.prazoMinimoDias || 0));
+        const iso = minDate.toISOString().slice(0, 10);
+        document.getElementById("prazo").min = iso;
+        document.getElementById("prazoHint").textContent =
+          `Prazo mínimo: ${CONFIG.prazoMinimoDias} dia(s) — a partir de ${fmtDate(iso)}`;
+      })();
+
+      // Chip selection behavior — multi-seleção (checkbox), tanto pra serviço quanto pra peça
+      function setupChipGroupMulti(containerId, onChange) {
+        document
+          .querySelectorAll(`#${containerId} .chip input`)
+          .forEach((input) => {
+            input.addEventListener("change", () => {
+              input.closest(".chip").classList.toggle("active", input.checked);
+              updateProgress();
+              if (onChange) onChange();
+            });
+          });
+      }
+
+      // "Outro" peça reveal
+      const pecaOutroField = document.getElementById("f-pecaOutro");
+      function handlePecaOutro() {
+        const outroChecked = !!document.querySelector(
+          '#pecaChips input[value="Outro"]:checked',
+        );
+        pecaOutroField.style.display = outroChecked ? "block" : "none";
+      }
+
+      setupChipGroupMulti("servicoChips");
+      setupChipGroupMulti("pecaChips", handlePecaOutro);
+
+      // Skip medidas toggle
+      const skipMedidas = document.getElementById("skipMedidas");
+      const medidasBlock = document.getElementById("medidasBlock");
+      skipMedidas.addEventListener("change", () => {
+        medidasBlock.style.display = skipMedidas.checked ? "none" : "block";
+      });
+
+      // Photo upload (compressed to base64)
+      const MAX_PHOTOS = CONFIG.maxFotos;
+      let photos = []; // {dataUrl}
+      const fotoInput = document.getElementById("fotoInput");
+      const thumbsEl = document.getElementById("thumbs");
+
+      fotoInput.addEventListener("change", (e) => {
+        const files = Array.from(e.target.files).slice(
+          0,
+          MAX_PHOTOS - photos.length,
+        );
+        files.forEach((file) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement("canvas");
+              const maxW = 700;
+              const scale = Math.min(1, maxW / img.width);
+              canvas.width = img.width * scale;
+              canvas.height = img.height * scale;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+              photos.push(dataUrl);
+              renderThumbs();
+            };
+            img.src = ev.target.result;
+          };
+          reader.readAsDataURL(file);
+        });
+        fotoInput.value = "";
+      });
+
+      function renderThumbs() {
+        thumbsEl.innerHTML = "";
+        photos.forEach((src, i) => {
+          const div = document.createElement("div");
+          div.className = "thumb";
+          div.innerHTML = `<img src="${src}"><button type="button" data-i="${i}">×</button>`;
+          thumbsEl.appendChild(div);
+        });
+        thumbsEl.querySelectorAll("button").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            photos.splice(Number(btn.dataset.i), 1);
+            renderThumbs();
+          });
+        });
+      }
+
+      // Progress tape
+      const requiredIds = ["nome", "contato", "prazo"];
+      function updateProgress() {
+        let filled = 0;
+        let total = requiredIds.length + 2; // + servico + peca
+        requiredIds.forEach((id) => {
+          if (document.getElementById(id).value.trim()) filled++;
+        });
+        if (document.querySelector("#servicoChips .chip.active")) filled++;
+        if (document.querySelector("#pecaChips .chip.active")) filled++;
+        const pct = Math.round((filled / total) * 100);
+        document.getElementById("tapeFill").style.width = pct + "%";
+        document.getElementById("tapeLabel").textContent = pct + "% preenchido";
+      }
+      requiredIds.forEach((id) =>
+        document.getElementById(id).addEventListener("input", updateProgress),
+      );
+      updateProgress();
+
+      // Validation + submit
+      const form = document.getElementById("form");
+      let lastData = null;
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        let valid = true;
+
+        function check(fieldId, ok) {
+          const el = document.getElementById(fieldId);
+          el.classList.toggle("invalid", !ok);
+          if (!ok) valid = false;
+        }
+
+        const nome = document.getElementById("nome").value.trim();
+        const contato = document.getElementById("contato").value.trim();
+        const contatoRaw = contato.replace(/\D/g, "");
+        const servicosEls = Array.from(
+          document.querySelectorAll("#servicoChips input:checked"),
+        );
+        const pecasEls = Array.from(
+          document.querySelectorAll("#pecaChips input:checked"),
+        );
+        const prazo = document.getElementById("prazo").value;
+        const prazoMin = document.getElementById("prazo").min;
+
+        check("f-nome", !!nome);
+        check("f-contato", contatoRaw.length >= 10);
+        check("f-servico", servicosEls.length > 0);
+        check("f-peca", pecasEls.length > 0);
+        check("f-prazo", !!prazo && (!prazoMin || prazo >= prazoMin));
+
+        if (!valid) {
+          document
+            .querySelector(".field.invalid")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
+
+        const pecaOutroTxt = document.getElementById("pecaOutro").value.trim();
+        const pecasNomes = pecasEls.map((el) =>
+          el.value === "Outro" && pecaOutroTxt ? pecaOutroTxt : el.value,
+        );
+
+        lastData = {
+          nome,
+          contato,
+          servico: servicosEls.map((el) => el.value).join(", "),
+          peca: pecasNomes.join(", "),
+          tecido: document.getElementById("tecido").value.trim(),
+          medidasSkip: skipMedidas.checked,
+          altura: document.getElementById("altura").value.trim(),
+          ombros: document.getElementById("ombros").value.trim(),
+          busto: document.getElementById("busto").value.trim(),
+          cintura: document.getElementById("cintura").value.trim(),
+          quadril: document.getElementById("quadril").value.trim(),
+          comprimento: document.getElementById("comprimento").value.trim(),
+          braco: document.getElementById("braco").value.trim(),
+          antebraco: document.getElementById("antebraco").value.trim(),
+          pulso: document.getElementById("pulso").value.trim(),
+          pernaComprimento: document
+            .getElementById("pernaComprimento")
+            .value.trim(),
+          coxa: document.getElementById("coxa").value.trim(),
+          panturrilha: document.getElementById("panturrilha").value.trim(),
+          prazo,
+          obs: document.getElementById("obs").value.trim(),
+          photos,
+        };
+
+        generatePDF(lastData);
+        form.style.display = "none";
+        document.getElementById("confirmCard").style.display = "block";
+        document
+          .getElementById("confirmCard")
+          .scrollIntoView({ behavior: "smooth" });
+      });
+
+      function fmtDate(iso) {
+        if (!iso) return "—";
+        const [y, m, d] = iso.split("-");
+        return `${d}/${m}/${y}`;
+      }
+
+      function generatePDF(data) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: "mm", format: "a4" });
+        const pageW = 210;
+        const margin = 18;
+        let y = 20;
+
+        // Header band
+        doc.setFillColor(168, 58, 50);
+        doc.rect(0, 0, pageW, 26, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.text(CONFIG.businessName, margin, 14);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        doc.text(CONFIG.tagline, margin, 20);
+        doc.setFontSize(9.5);
+        doc.text(`Pedido Nº ${ticketId}`, pageW - margin, 14, {
+          align: "right",
+        });
+        doc.text(new Date().toLocaleDateString("pt-BR"), pageW - margin, 20, {
+          align: "right",
+        });
+
+        y = 38;
+        doc.setTextColor(42, 37, 32);
+
+        function ensureSpace(needed) {
+          if (y + needed > 280) {
+            doc.addPage();
+            y = 20;
+            doc.setTextColor(42, 37, 32);
+          }
+        }
+
+        function sectionTitle(t) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(11.5);
+          doc.setDrawColor(200, 190, 160);
+          doc.text(t, margin, y);
+          doc.line(margin, y + 1.5, pageW - margin, y + 1.5);
+          y += 8;
+        }
+        function row(label, value) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(9.5);
+          doc.text(label, margin, y);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10.5);
+          const lines = doc.splitTextToSize(
+            String(value || "—"),
+            pageW - margin * 2 - 42,
+          );
+          doc.text(lines, margin + 44, y);
+          y += Math.max(6, lines.length * 5.2);
+        }
+
+        sectionTitle("SOLICITANTE");
+        row("Nome", data.nome);
+        row("WhatsApp", data.contato);
+        y += 3;
+
+        sectionTitle("SERVIÇO SOLICITADO");
+        row("Tipo de serviço", data.servico);
+        row("Tipo de peça", data.peca);
+        row("Tecido", data.tecido || "A definir");
+        y += 3;
+
+        ensureSpace(90);
+        sectionTitle("MEDIDAS");
+        if (data.medidasSkip) {
+          doc.setFont("helvetica", "italic");
+          doc.setFontSize(10);
+          doc.text(
+            "Cliente prefere que as medidas sejam tiradas presencialmente.",
+            margin,
+            y,
+          );
+          y += 8;
+        } else {
+          row("Altura", data.altura ? data.altura + " cm" : "—");
+          row("Ombros", data.ombros ? data.ombros + " cm" : "—");
+          row("Busto", data.busto ? data.busto + " cm" : "—");
+          row("Cintura", data.cintura ? data.cintura + " cm" : "—");
+          row("Quadril", data.quadril ? data.quadril + " cm" : "—");
+          row(
+            "Comprimento da peça",
+            data.comprimento ? data.comprimento + " cm" : "—",
+          );
+          row("Braço", data.braco ? data.braco + " cm" : "—");
+          row("Antebraço", data.antebraco ? data.antebraco + " cm" : "—");
+          row("Pulso", data.pulso ? data.pulso + " cm" : "—");
+          row(
+            "Perna (comprimento)",
+            data.pernaComprimento ? data.pernaComprimento + " cm" : "—",
+          );
+          row("Coxa", data.coxa ? data.coxa + " cm" : "—");
+          row("Panturrilha", data.panturrilha ? data.panturrilha + " cm" : "—");
+        }
+        y += 3;
+
+        ensureSpace(30);
+        sectionTitle("PRAZO E OBSERVAÇÕES");
+        row("Prazo desejado", fmtDate(data.prazo));
+        row("Observações", data.obs || "—");
+        y += 4;
+
+        // Photos — grade que se ajusta à quantidade e quebra página se precisar
+        if (data.photos && data.photos.length) {
+          ensureSpace(30);
+          sectionTitle("FOTOS DE REFERÊNCIA");
+
+          const cols = 3;
+          const gap = 6;
+          const imgW = (pageW - margin * 2 - gap * (cols - 1)) / cols;
+          const imgH = imgW * 0.75;
+          let x = margin,
+            col = 0;
+
+          data.photos.forEach((src) => {
+            if (y + imgH > 280) {
+              doc.addPage();
+              y = 20;
+              x = margin;
+              col = 0;
+              doc.setTextColor(42, 37, 32);
+            }
+            try {
+              doc.addImage(src, "JPEG", x, y, imgW, imgH);
+            } catch (e) {}
+            col++;
+            if (col >= cols) {
+              col = 0;
+              x = margin;
+              y += imgH + gap;
+            } else {
+              x += imgW + gap;
+            }
+          });
+          if (col !== 0) y += imgH + gap;
+          y += 4;
+        }
+
+        // Footer note
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(8.5);
+        doc.setTextColor(120, 110, 95);
+        doc.text(
+          "Documento gerado automaticamente a partir do formulário de pedido de orçamento.",
+          margin,
+          285,
+        );
+
+        doc.save(`pedido-${ticketId}.pdf`);
+      }
+
+      // WhatsApp button
+      document.getElementById("waBtn").addEventListener("click", () => {
+        if (!lastData) return;
+        const d = lastData;
+        const msg = `📋 *SOLICITAÇÃO DE ORÇAMENTO* — Nº ${ticketId}
+
+Nome: ${d.nome}
+Serviço: ${d.servico}
+Peça: ${d.peca}
+Tecido: ${d.tecido || "a definir"}
+Prazo desejado: ${fmtDate(d.prazo)}
+${d.medidasSkip ? "Medidas: prefiro tirar na hora da prova" : "Medidas: detalhadas no PDF em anexo"}
+${d.obs ? `Observações: ${d.obs}` : ""}
+
+📎 Estou enviando o PDF do pedido em seguida, com as fotos de referência (se houver).`;
+
+        const url = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`;
+        window.open(url, "_blank");
+      });
+
+      document.getElementById("newBtn").addEventListener("click", () => {
+        window.location.reload();
+      });
+    </script>
+  </body>
+</html>

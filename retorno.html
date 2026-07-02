@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Montar Orçamento — Ateliê Marina</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Domine:wght@500;700&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+      :root {
+        --paper: #ede7d8;
+        --paper-deep: #e6ddc5;
+        --ink: #232221;
+        --ink-soft: #5c5346;
+        --thread: #422421;
+        --thread-deep: #351a18;
+        --chalk: #35625a;
+        --mustard: #c89a3e;
+        --line: #242320;
+        --white: #fbf9f3;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background:
+          repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 27px,
+            rgba(42, 37, 32, 0.028) 28px
+          ),
+          var(--paper);
+        color: var(--ink);
+        font-family: "Work Sans", sans-serif;
+        line-height: 1.5;
+        padding: 28px 16px 64px;
+      }
+      .wrap {
+        max-width: 680px;
+        margin: 0 auto;
+      }
+      .brandbar {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 6px;
+      }
+      .badge {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: var(--chalk);
+        color: var(--white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Domine", serif;
+        font-weight: 700;
+        font-size: 22px;
+        flex-shrink: 0;
+        box-shadow:
+          0 0 0 3px var(--paper),
+          0 0 0 4px var(--line);
+      }
+      /* Estilo para a imagem dentro do badge */
+#badgeImage {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover; /* ajusta a imagem para preencher sem distorcer */
+  display: block;
+}
+      .brandtext h1 {
+        font-family: "Domine", serif;
+        font-weight: 700;
+        font-size: 21px;
+        margin: 0 0 2px;
+      }
+      .brandtext p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ink-soft);
+        font-style: italic;
+      }
+      .subhead {
+        font-size: 12.5px;
+        color: var(--ink-soft);
+        margin: 14px 0 20px;
+      }
+
+      .card {
+        background: var(--white);
+        border: 2px dashed var(--line);
+        border-radius: 6px;
+        padding: 26px 22px;
+        position: relative;
+        margin-bottom: 20px;
+      }
+      .card::before,
+      .card::after {
+        content: "✂";
+        position: absolute;
+        font-size: 14px;
+        color: var(--line);
+        top: -11px;
+        background: var(--paper);
+        padding: 0 4px;
+      }
+      .card::before {
+        left: 14px;
+      }
+      .card::after {
+        right: 14px;
+      }
+
+      .section {
+        margin-bottom: 24px;
+      }
+      .section:last-child {
+        margin-bottom: 0;
+      }
+      .section-head {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 8px;
+      }
+      .section-num {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--chalk);
+        font-weight: 600;
+      }
+      .section-title {
+        font-family: "Domine", serif;
+        font-weight: 700;
+        font-size: 16px;
+      }
+
+      label {
+        display: block;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      label .opt {
+        color: var(--ink-soft);
+        font-weight: 400;
+        text-transform: none;
+        letter-spacing: 0;
+        font-style: italic;
+      }
+      .field {
+        margin-bottom: 16px;
+      }
+      .row2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      input[type="text"],
+      input[type="tel"],
+      input[type="date"],
+      input[type="number"],
+      textarea,
+      select {
+        width: 100%;
+        padding: 11px 12px;
+        font-size: 15px;
+        font-family: "Work Sans", sans-serif;
+        border: 1.5px solid var(--line);
+        border-radius: 4px;
+        background: var(--paper);
+        color: var(--ink);
+      }
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--chalk);
+        background: var(--white);
+      }
+      textarea {
+        resize: vertical;
+        min-height: 64px;
+      }
+
+      /* Line items table */
+      .items {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 10px;
+      }
+      .item-row {
+        display: grid;
+        grid-template-columns: 1fr 60px 90px 32px;
+        gap: 8px;
+        padding: 10px;
+        align-items: center;
+      }
+      .item-row.head {
+        background: var(--paper-deep);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: var(--ink-soft);
+        font-weight: 600;
+      }
+      .item-row:not(.head) {
+        border-top: 1px solid var(--line);
+      }
+      .item-row input {
+        padding: 8px;
+        font-size: 13.5px;
+      }
+      .item-row .rm {
+        background: none;
+        border: none;
+        color: var(--thread);
+        font-size: 18px;
+        cursor: pointer;
+        padding: 0;
+      }
+      .item-row .val {
+        font-family: "JetBrains Mono", monospace;
+        text-align: right;
+        padding-right: 4px;
+        font-size: 13.5px;
+      }
+
+      .add-item {
+        background: none;
+        border: 1.5px dashed var(--line);
+        color: var(--chalk);
+        width: 100%;
+        padding: 10px;
+        border-radius: 4px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-bottom: 16px;
+        font-size: 13.5px;
+      }
+      .add-item:hover {
+        border-color: var(--chalk);
+      }
+
+      .total-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 16px;
+        background: var(--chalk);
+        color: #fff;
+        border-radius: 6px;
+        margin-top: 4px;
+      }
+      .total-row .label {
+        font-family: "Domine", serif;
+        font-size: 14px;
+      }
+      .total-row .value {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .vistoria-box {
+        border: 1.5px solid var(--line);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 16px;
+        background: var(--paper);
+      }
+      .vistoria-label {
+        display: block;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: var(--ink-soft);
+        font-weight: 600;
+        padding: 10px 14px 8px;
+      }
+      .vistoria-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 11px 14px;
+        cursor: pointer;
+        border-top: 1px solid var(--line);
+        transition: background 0.15s;
+      }
+      .vistoria-option.active {
+        background: var(--white);
+      }
+      .vistoria-option input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--chalk);
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .vistoria-option .txt {
+        font-size: 13.5px;
+        color: var(--ink);
+      }
+      .vistoria-option .txt strong {
+        display: block;
+        font-size: 12.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: var(--chalk);
+        margin-bottom: 2px;
+      }
+
+      .summary-box {
+        border: 1.5px solid var(--line);
+        border-radius: 6px;
+        padding: 14px 14px 4px;
+        background: var(--paper);
+        margin-bottom: 4px;
+      }
+      .summary-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13.5px;
+        color: var(--ink-soft);
+        padding-bottom: 10px;
+      }
+      .summary-line .value {
+        font-family: "JetBrains Mono", monospace;
+        color: var(--ink);
+      }
+      .discount-field {
+        margin-bottom: 12px;
+      }
+      .discount-field input {
+        background: var(--white);
+      }
+
+      .btn {
+        width: 100%;
+        padding: 15px;
+        font-size: 15px;
+        font-weight: 600;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: "Work Sans", sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .btn-primary {
+        background: var(--thread);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: var(--thread-deep);
+      }
+      .btn-wa {
+        background: #3e6b63;
+        color: #fff;
+        margin-top: 10px;
+      }
+      .btn-wa:hover {
+        background: #2f544d;
+      }
+      .btn-wa:disabled {
+        background: #b8ab8f;
+        cursor: not-allowed;
+      }
+      .helper {
+        font-size: 12px;
+        color: var(--ink-soft);
+        text-align: center;
+        margin-top: 10px;
+      }
+
+      footer {
+        text-align: center;
+        font-size: 11.5px;
+        color: var(--ink-soft);
+        margin-top: 26px;
+      }
+      @media (max-width: 460px) {
+        .row2 {
+          grid-template-columns: 1fr;
+        }
+        .card {
+          padding: 20px 14px;
+        }
+        .item-row {
+          grid-template-columns: 1fr 44px 70px 26px;
+          gap: 5px;
+        }
+        .item-row input {
+          padding: 7px 5px;
+          font-size: 12.5px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="brandbar">
+        <!-- versão antiga: -->
+<!-- <div class="badge" id="badge">M</div> -->
+
+<!-- nova versão: -->
+<div class="badge" id="badge">
+  <img src="logo.jpg" alt="Logo do Ateliê" id="badgeImage" />
+</div>
+        <div class="brandtext">
+          <h1 id="bizName">Ateliê Marina Costura</h1>
+          <p id="bizTag">montar orçamento de retorno</p>
+        </div>
+      </div>
+      <p class="subhead">
+        Preencha os dados do pedido, monte os itens e gere um orçamento em PDF
+        pronto para enviar ao cliente.
+      </p>
+
+      <form class="card" id="form">
+        <div class="section">
+          <div class="section-head">
+            <span class="section-num">01</span
+            ><span class="section-title">Cliente</span>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>Nome do cliente</label>
+              <input
+                type="text"
+                id="clienteNome"
+                placeholder="Nome do cliente"
+                maxlength="60"
+                autocomplete="name"
+              />
+            </div>
+            <div class="field">
+              <label>WhatsApp do cliente</label>
+              <input
+                type="tel"
+                id="clienteContato"
+                placeholder="(21) 90000-0000"
+                inputmode="numeric"
+                maxlength="15"
+                autocomplete="tel"
+              />
+            </div>
+          </div>
+          <div class="field">
+            <label
+              >Nº do pedido de origem
+              <span class="opt">se veio do formulário</span></label
+            >
+            <input type="text" id="pedidoOrigem" placeholder="Ex: 260702-14" />
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <span class="section-num">02</span
+            ><span class="section-title">Itens do orçamento</span>
+          </div>
+          <div class="items" id="itemsTable">
+            <div class="item-row head">
+              <div>Descrição</div>
+              <div>Qtd</div>
+              <div>Valor un.</div>
+              <div></div>
+            </div>
+          </div>
+          <button type="button" class="add-item" id="addItem">
+            + Adicionar item
+          </button>
+          <div class="summary-box">
+            <div class="summary-line">
+              <span>Subtotal</span>
+              <span class="value" id="subtotalValue">R$ 0,00</span>
+            </div>
+            <div class="field discount-field">
+              <label
+                >Desconto <span class="opt">opcional, em R$</span></label
+              >
+              <input
+                type="text"
+                id="desconto"
+                inputmode="decimal"
+                placeholder="0,00"
+                maxlength="12"
+              />
+            </div>
+          </div>
+          <div class="total-row">
+            <span class="label">Total do orçamento</span>
+            <span class="value" id="totalValue">R$ 0,00</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <span class="section-num">03</span
+            ><span class="section-title">Condições</span>
+          </div>
+          <div class="vistoria-box">
+            <span class="vistoria-label">Status da avaliação</span>
+            <label class="vistoria-option active">
+              <input
+                type="radio"
+                name="vistoriaStatus"
+                value="feita"
+                checked
+              />
+              <span class="txt"
+                ><strong>Já conferi presencialmente</strong>O valor abaixo é
+                fechado</span
+              >
+            </label>
+            <label class="vistoria-option">
+              <input type="radio" name="vistoriaStatus" value="pendente" />
+              <span class="txt"
+                ><strong>Ainda não conferi</strong>Valor é estimativa,
+                sujeito a confirmação após conferência presencial</span
+              >
+            </label>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>Prazo de entrega</label>
+              <input type="date" id="prazoEntrega" />
+            </div>
+            <div class="field">
+              <label>Validade do orçamento</label>
+              <input type="date" id="validade" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Forma de pagamento</label>
+            <input
+              type="text"
+              id="pagamento"
+              placeholder="Ex: 50% na encomenda, 50% na retirada — PIX ou dinheiro"
+            />
+          </div>
+          <div class="field">
+            <label
+              >Observações / ressalvas <span class="opt">opcional</span></label
+            >
+            <textarea
+              id="obsRetorno"
+              placeholder="Sujeito a confirmação de tecido, ajustes finais na prova, etc."
+            ></textarea>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+          📄 Gerar orçamento em PDF
+        </button>
+        <p class="helper">
+          Depois de gerar, você pode enviar direto pelo WhatsApp do cliente
+        </p>
+      </form>
+
+      <button class="btn btn-wa" id="waBtn" disabled>
+        💬 Enviar orçamento pelo WhatsApp
+      </button>
+
+      <footer>
+        Feito com carinho para
+        <span id="bizNameFooter">Ateliê Marina Costura</span>
+      </footer>
+    </div>
+
+    <script>
+      /* ============================================================
+   CONFIGURAÇÃO DO NEGÓCIO — edite estes valores para cada cliente
+   ============================================================ */
+      const CONFIG = {
+        businessName: "Ateliê Marina Costura",
+        tagline: "montar orçamento de retorno",
+        badgeLetter: "",
+        whatsappNumber: "", // opcional aqui: se vazio, usamos o contato do cliente digitado no form
+      };
+
+      document.getElementById("bizName").textContent = CONFIG.businessName;
+      document.getElementById("bizTag").textContent = CONFIG.tagline;
+      // document.getElementById("badge").textContent = CONFIG.badgeLetter;
+      if (CONFIG.badgeLetter) {
+  document.getElementById("badge").textContent = CONFIG.badgeLetter;
+}
+      document.getElementById("bizNameFooter").textContent =
+        CONFIG.businessName;
+
+      // Realce visual da opção de vistoria selecionada
+      document.querySelectorAll('input[name="vistoriaStatus"]').forEach((r) => {
+        r.addEventListener("change", () => {
+          document
+            .querySelectorAll(".vistoria-option")
+            .forEach((opt) => opt.classList.remove("active"));
+          r.closest(".vistoria-option").classList.add("active");
+        });
+      });
+
+      // Sanitização do nome do cliente — só letras, espaços, apóstrofo e hífen
+      const clienteNomeInput = document.getElementById("clienteNome");
+      clienteNomeInput.addEventListener("input", function () {
+        this.value = this.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ' -]/g, "");
+      });
+
+      // Máscara de telefone — só números, formato (XX) XXXXX-XXXX
+      const clienteContatoInput = document.getElementById("clienteContato");
+      clienteContatoInput.addEventListener("input", function () {
+        let v = this.value.replace(/\D/g, "").slice(0, 11);
+        if (v.length > 10)
+          v = v.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+        else if (v.length > 6)
+          v = v.replace(/^(\d{2})(\d{4})(\d*)$/, "($1) $2-$3");
+        else if (v.length > 2) v = v.replace(/^(\d{2})(\d*)$/, "($1) $2");
+        this.value = v;
+      });
+
+      // Sanitização de valores monetários — dígitos + no máximo um separador decimal (, ou .)
+      function sanitizeDecimalInput(el) {
+        let v = el.value.replace(/[^0-9.,]/g, "");
+        const firstSep = v.search(/[.,]/);
+        if (firstSep !== -1) {
+          const before = v.slice(0, firstSep + 1);
+          const after = v.slice(firstSep + 1).replace(/[.,]/g, "");
+          v = before + after;
+        }
+        el.value = v;
+      }
+
+      // Converte string em formato BR ("12,50" ou "12.50") para número
+      function parseNumBR(str) {
+        if (!str) return 0;
+        const n = parseFloat(String(str).replace(",", "."));
+        return isNaN(n) || n < 0 ? 0 : n;
+      }
+
+      // Campo de desconto — mesma sanitização decimal dos valores unitários
+      const descontoInput = document.getElementById("desconto");
+      descontoInput.addEventListener("input", function () {
+        sanitizeDecimalInput(this);
+        updateTotal();
+      });
+
+      const quoteId = (() => {
+        const d = new Date();
+        const y = d.getFullYear().toString().slice(-2);
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        const rand = Math.floor(Math.random() * 90 + 10);
+        return `${y}${m}${day}-${rand}`;
+      })();
+
+      // ---- Line items ----
+      const itemsTable = document.getElementById("itemsTable");
+      let itemCount = 0;
+
+      function addItemRow(desc = "", qtd = 1, valor = "") {
+        itemCount++;
+        const id = itemCount;
+        const row = document.createElement("div");
+        row.className = "item-row";
+        row.dataset.id = id;
+        row.innerHTML = `
+    <input type="text" class="i-desc" placeholder="Ex: Ajuste de bainha" value="${desc}" maxlength="80">
+    <input type="text" class="i-qtd" inputmode="numeric" placeholder="1" value="${qtd}" maxlength="4">
+    <input type="text" class="i-valor" inputmode="decimal" placeholder="0,00" value="${valor}" maxlength="12">
+    <button type="button" class="rm">×</button>
+  `;
+        itemsTable.appendChild(row);
+        row.querySelector(".rm").addEventListener("click", () => {
+          row.remove();
+          updateTotal();
+        });
+        row.querySelector(".i-qtd").addEventListener("input", function () {
+          this.value = this.value.replace(/[^0-9]/g, "");
+        });
+        row.querySelector(".i-valor").addEventListener("input", function () {
+          sanitizeDecimalInput(this);
+        });
+        row
+          .querySelectorAll("input")
+          .forEach((inp) => inp.addEventListener("input", updateTotal));
+        updateTotal();
+      }
+
+      function updateTotal() {
+        let subtotal = 0;
+        itemsTable.querySelectorAll(".item-row:not(.head)").forEach((row) => {
+          const qtd = parseNumBR(row.querySelector(".i-qtd").value) || 0;
+          const valor = parseNumBR(row.querySelector(".i-valor").value) || 0;
+          subtotal += qtd * valor;
+        });
+        const desconto = Math.min(
+          parseNumBR(descontoInput.value) || 0,
+          subtotal,
+        );
+        const total = subtotal - desconto;
+        document.getElementById("subtotalValue").textContent =
+          fmtMoney(subtotal);
+        document.getElementById("totalValue").textContent = fmtMoney(total);
+      }
+
+      document
+        .getElementById("addItem")
+        .addEventListener("click", () => addItemRow());
+      addItemRow(); // start with one empty row
+
+      function getItems() {
+        const items = [];
+        itemsTable.querySelectorAll(".item-row:not(.head)").forEach((row) => {
+          const desc = row.querySelector(".i-desc").value.trim();
+          const qtd = parseNumBR(row.querySelector(".i-qtd").value) || 0;
+          const valor = parseNumBR(row.querySelector(".i-valor").value) || 0;
+          if (desc) items.push({ desc, qtd, valor, subtotal: qtd * valor });
+        });
+        return items;
+      }
+
+      function fmtMoney(v) {
+        return (
+          "R$ " +
+          v.toLocaleString("pt-BR", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })
+        );
+      }
+      function fmtDate(iso) {
+        if (!iso) return "—";
+        const [y, m, d] = iso.split("-");
+        return `${d}/${m}/${y}`;
+      }
+
+      let lastQuote = null;
+
+      document.getElementById("form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const items = getItems();
+        if (items.length === 0) {
+          alert("Adicione pelo menos um item ao orçamento.");
+          return;
+        }
+        const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
+        const desconto = Math.min(parseNumBR(descontoInput.value) || 0, subtotal);
+        const total = subtotal - desconto;
+
+        lastQuote = {
+          clienteNome:
+            document.getElementById("clienteNome").value.trim() || "Cliente",
+          clienteContato: document
+            .getElementById("clienteContato")
+            .value.trim(),
+          pedidoOrigem: document.getElementById("pedidoOrigem").value.trim(),
+          items,
+          subtotal,
+          desconto,
+          total,
+          vistoriaStatus: document.querySelector(
+            'input[name="vistoriaStatus"]:checked',
+          ).value, // 'feita' ou 'pendente'
+          prazoEntrega: document.getElementById("prazoEntrega").value,
+          validade: document.getElementById("validade").value,
+          pagamento: document.getElementById("pagamento").value.trim(),
+          obs: document.getElementById("obsRetorno").value.trim(),
+        };
+
+        generatePDF(lastQuote);
+        document.getElementById("waBtn").disabled = false;
+        document
+          .getElementById("waBtn")
+          .scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+
+      function generatePDF(q) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: "mm", format: "a4" });
+        const pageW = 210,
+          margin = 18;
+        let y = 20;
+
+        doc.setFillColor(62, 107, 99);
+        doc.rect(0, 0, pageW, 26, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.text(CONFIG.businessName, margin, 14);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        doc.text("Orçamento de serviço", margin, 20);
+        doc.text(`Orçamento Nº ${quoteId}`, pageW - margin, 14, {
+          align: "right",
+        });
+        doc.text(new Date().toLocaleDateString("pt-BR"), pageW - margin, 20, {
+          align: "right",
+        });
+
+        y = 38;
+        doc.setTextColor(42, 37, 32);
+
+        function sectionTitle(t) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(11.5);
+          doc.setDrawColor(200, 190, 160);
+          doc.text(t, margin, y);
+          doc.line(margin, y + 1.5, pageW - margin, y + 1.5);
+          y += 8;
+        }
+        function row(label, value) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(9.5);
+          doc.text(label, margin, y);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10.5);
+          const lines = doc.splitTextToSize(
+            String(value || "—"),
+            pageW - margin * 2 - 44,
+          );
+          doc.text(lines, margin + 44, y);
+          y += Math.max(6, lines.length * 5.2);
+        }
+
+        sectionTitle("CLIENTE");
+        row("Nome", q.clienteNome);
+        if (q.clienteContato) row("WhatsApp", q.clienteContato);
+        if (q.pedidoOrigem) row("Pedido de origem", `Nº ${q.pedidoOrigem}`);
+        y += 3;
+
+        sectionTitle("ITENS");
+        // table header
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.text("DESCRIÇÃO", margin, y);
+        doc.text("QTD", pageW - margin - 52, y, { align: "right" });
+        doc.text("VALOR UN.", pageW - margin - 26, y, { align: "right" });
+        doc.text("SUBTOTAL", pageW - margin, y, { align: "right" });
+        y += 5;
+        doc.setDrawColor(220, 212, 190);
+        doc.line(margin, y - 3.5, pageW - margin, y - 3.5);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        q.items.forEach((it) => {
+          const lines = doc.splitTextToSize(it.desc, 95);
+          doc.text(lines, margin, y);
+          doc.text(String(it.qtd), pageW - margin - 52, y, { align: "right" });
+          doc.text(fmtMoney(it.valor), pageW - margin - 26, y, {
+            align: "right",
+          });
+          doc.text(fmtMoney(it.subtotal), pageW - margin, y, {
+            align: "right",
+          });
+          y += Math.max(6, lines.length * 5.2);
+        });
+
+        y += 2;
+        doc.setDrawColor(200, 190, 160);
+        doc.line(margin, y, pageW - margin, y);
+        y += 8;
+
+        if (q.desconto > 0) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10);
+          doc.text("Subtotal", margin, y);
+          doc.text(fmtMoney(q.subtotal), pageW - margin, y, {
+            align: "right",
+          });
+          y += 6;
+          doc.text("Desconto", margin, y);
+          doc.text(`- ${fmtMoney(q.desconto)}`, pageW - margin, y, {
+            align: "right",
+          });
+          y += 8;
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(13);
+        doc.text("TOTAL", margin, y);
+        doc.text(fmtMoney(q.total), pageW - margin, y, { align: "right" });
+        y += 12;
+
+        if (q.vistoriaStatus === "pendente") {
+          doc.setFillColor(200, 154, 62);
+          doc.roundedRect(margin, y - 5, pageW - margin * 2, 10, 1.5, 1.5, "F");
+          doc.setTextColor(255, 255, 255);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(9.5);
+          doc.text(
+            "⚠ ESTIMATIVA PRELIMINAR — SUJEITA A AJUSTE APÓS CONFERÊNCIA PRESENCIAL",
+            margin + 4,
+            y + 1.5,
+          );
+          doc.setTextColor(42, 37, 32);
+          y += 12;
+        }
+
+        sectionTitle("CONDIÇÕES");
+        row("Prazo de entrega", fmtDate(q.prazoEntrega));
+        row("Validade do orçamento", fmtDate(q.validade));
+        row("Forma de pagamento", q.pagamento || "—");
+        if (q.obs) row("Observações", q.obs);
+
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(8.5);
+        doc.setTextColor(120, 110, 95);
+        doc.text(
+          "Orçamento sujeito a confirmação. Documento gerado automaticamente.",
+          margin,
+          285,
+        );
+
+        doc.save(`orcamento-${quoteId}.pdf`);
+      }
+
+      document.getElementById("waBtn").addEventListener("click", () => {
+        if (!lastQuote) return;
+        const q = lastQuote;
+        const number =
+          CONFIG.whatsappNumber || q.clienteContato.replace(/\D/g, "");
+        if (!number) {
+          alert("Informe o WhatsApp do cliente para enviar a mensagem.");
+          return;
+        }
+        const itemsList = q.items
+          .map((i) => `• ${i.desc} (${i.qtd}x) — ${fmtMoney(i.subtotal)}`)
+          .join("\n");
+        const descontoLine =
+          q.desconto > 0
+            ? `Subtotal: ${fmtMoney(q.subtotal)}\nDesconto: - ${fmtMoney(q.desconto)}\n`
+            : "";
+        const msg = `📄 *ORÇAMENTO* — Nº ${quoteId}
+
+Olá, ${q.clienteNome}! Segue o orçamento do seu pedido:
+
+${itemsList}
+
+${descontoLine}*Total: ${fmtMoney(q.total)}*
+${q.vistoriaStatus === "pendente" ? "\n⚠ Estimativa preliminar — valor sujeito a ajuste após conferência presencial." : ""}
+
+Prazo de entrega: ${fmtDate(q.prazoEntrega)}
+Válido até: ${fmtDate(q.validade)}
+Pagamento: ${q.pagamento || "a combinar"}
+${q.obs ? `\nObs: ${q.obs}` : ""}
+
+📎 Estou enviando o PDF completo em seguida.`;
+
+        const url = `https://wa.me/${number}?text=${encodeURIComponent(msg)}`;
+        window.open(url, "_blank");
+      });
+    </script>
+  </body>
+</html>

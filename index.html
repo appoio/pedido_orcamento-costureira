@@ -896,10 +896,10 @@
       document.getElementById("bizTag").textContent = CONFIG.tagline;
       // document.getElementById("badge").textContent = CONFIG.badgeLetter;
       // Se você quiser manter a opção de letra OU imagem, use:
-if (CONFIG.badgeLetter) {
-  document.getElementById("badge").textContent = CONFIG.badgeLetter;
-}
-// Se não, a imagem do HTML será exibida
+      if (CONFIG.badgeLetter) {
+        document.getElementById("badge").textContent = CONFIG.badgeLetter;
+      }
+      // Se não, a imagem do HTML será exibida
       document.getElementById("bizNameFooter").textContent =
         CONFIG.businessName;
       document.getElementById("maxFotosLabel").textContent = CONFIG.maxFotos;
@@ -1031,7 +1031,7 @@ if (CONFIG.badgeLetter) {
               const ctx = canvas.getContext("2d");
               ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
               const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
-              photos.push(dataUrl);
+              photos.push({ dataUrl, w: canvas.width, h: canvas.height });
               renderThumbs();
             };
             img.src = ev.target.result;
@@ -1043,10 +1043,10 @@ if (CONFIG.badgeLetter) {
 
       function renderThumbs() {
         thumbsEl.innerHTML = "";
-        photos.forEach((src, i) => {
+        photos.forEach((p, i) => {
           const div = document.createElement("div");
           div.className = "thumb";
-          div.innerHTML = `<img src="${src}"><button type="button" data-i="${i}">×</button>`;
+          div.innerHTML = `<img src="${p.dataUrl}"><button type="button" data-i="${i}">×</button>`;
           thumbsEl.appendChild(div);
         });
         thumbsEl.querySelectorAll("button").forEach((btn) => {
@@ -1275,32 +1275,38 @@ if (CONFIG.badgeLetter) {
 
           const cols = 3;
           const gap = 6;
-          const imgW = (pageW - margin * 2 - gap * (cols - 1)) / cols;
-          const imgH = imgW * 0.75;
+          const cellW = (pageW - margin * 2 - gap * (cols - 1)) / cols;
+          const cellH = cellW * 0.75; // altura máxima da célula
           let x = margin,
             col = 0;
 
-          data.photos.forEach((src) => {
-            if (y + imgH > 280) {
+          data.photos.forEach((p) => {
+            if (y + cellH > 280) {
               doc.addPage();
               y = 20;
               x = margin;
               col = 0;
-              doc.setTextColor(42, 37, 32);
+              doc.setTextColor(38, 48, 44);
             }
+            // encaixa a foto na célula mantendo a proporção real (contain, sem esticar)
+            const ratio = Math.min(cellW / p.w, cellH / p.h);
+            const w = p.w * ratio;
+            const h = p.h * ratio;
+            const offsetX = (cellW - w) / 2;
+            const offsetY = (cellH - h) / 2;
             try {
-              doc.addImage(src, "JPEG", x, y, imgW, imgH);
+              doc.addImage(p.dataUrl, "JPEG", x + offsetX, y + offsetY, w, h);
             } catch (e) {}
             col++;
             if (col >= cols) {
               col = 0;
               x = margin;
-              y += imgH + gap;
+              y += cellH + gap;
             } else {
-              x += imgW + gap;
+              x += cellW + gap;
             }
           });
-          if (col !== 0) y += imgH + gap;
+          if (col !== 0) y += cellH + gap;
           y += 4;
         }
 
